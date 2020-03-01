@@ -1,17 +1,21 @@
 import requests
 import json
 import mysql.connector
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 mydb = mysql.connector.connect(
-  host="192.168.1.101",
-  user="admin",
-  passwd="nocore",
-  database="thaikarunafnd"
+  host=config['MySQL']['host'],
+  user=config['MySQL']['username'],
+  passwd=config['MySQL']['password'],
+  database=config['MySQL']['database']
 )
 
 mycursor = mydb.cursor()
 
-mycursor.execute("SELECT * FROM member")
+mycursor.execute("SELECT * FROM member WHERE MemberID=1")
 
 myresult = mycursor.fetchall()
 
@@ -83,8 +87,8 @@ for x in myresult:
         "date_applied": date_applied
     }
 
-    url = 'http://34.87.74.244:8080/v1/graphql'
-    secret = 'Karuna2485'
+    url = config['GraphQL']['url']
+    secret = config['GraphQL']['secret']
     headers = {'Content-Type': 'application/json', 'x-hasura-admin-secret': '%s' % secret}
 
     r = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
