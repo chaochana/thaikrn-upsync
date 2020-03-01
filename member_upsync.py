@@ -4,6 +4,7 @@ import mysql.connector
 import configparser
 import logging
 
+
 logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
