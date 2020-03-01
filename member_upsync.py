@@ -2,24 +2,25 @@ import requests
 import json
 import mysql.connector
 import configparser
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-mydb = mysql.connector.connect(
+db = mysql.connector.connect(
   host=config['MySQL']['host'],
   user=config['MySQL']['username'],
   passwd=config['MySQL']['password'],
   database=config['MySQL']['database']
 )
 
-mycursor = mydb.cursor()
+cursor = db.cursor()
+cursor.execute("SELECT * FROM member WHERE MemberID=1")
+result = cursor.fetchall()
 
-mycursor.execute("SELECT * FROM member WHERE MemberID=1")
-
-myresult = mycursor.fetchall()
-
-for x in myresult:
+for x in result:
     member_id = str(x[0])
     title = str(x[6])
     name = str(x[7])
@@ -37,13 +38,7 @@ for x in myresult:
     if title == "None" or title == "":
         title = None
 
-    # print(member_id)
-    # print(title)
-    # print(name)
-    # print(lastname)
-    # print(gender)
-    # print(date_applied)
-    # print(note)
+    logging.debug("member_id: {}, title: {}, name: {}, lastname: {}, gender: {}, date_applied: {}, note: {}".format(member_id, title, name, lastname, gender, date_applied, note))
 
     query = """
         mutation insert_member (
@@ -95,6 +90,6 @@ for x in myresult:
 
     if r.status_code == 200:
         r_json = json.loads(r.text)
-        print(str(r_json))
+        logging.info("Insert response" + str(r_json))
     else:
         raise Exception("Query failed to run by returning code of {}. {}".format(requests.status_code, query))
