@@ -75,6 +75,43 @@ def gql_insert_member(variables):
     return gql(insert_query, variables)
 
 
+def gql_insert_medication(variables):
+    insert_query = """
+        mutation insert_medication(
+          $member_id: bigint,
+          $order: json,
+          $order_date: date,
+          $queue: Int,
+          $session: String,
+          $type: String
+            ) {
+          insert_medication(
+            objects: {
+              member_id: $member_id, 
+              order: $order, 
+              order_date: $order_date, 
+              queue: $queue, 
+              session: $session,
+              type: $type 
+            }) {
+            returning {
+              id
+              member_id
+              order
+              order_date
+              queue
+              session
+              type
+              updated_at
+              created_at
+            }
+          }
+        }
+    """
+
+    return gql(insert_query, variables)
+
+
 def gql_max_member():
     max_member_query = """
     query max_member {
@@ -103,3 +140,11 @@ def sql_max_member():
     response = sql(query)
 
     return int(response[0][0])
+
+
+def sql_medication_by_date(date):
+    return sql("SELECT Transaction_ID, MemberID, Queue, Queue_Session, Transaction_Type FROM `medicinetransaction` WHERE DATE_IDX = '{}'".format(date.replace('-', '')))
+
+
+def get_sql_medication_detail_by_id(id):
+    return sql("SELECT med.MedicineID, med_order.Amount, med_order.Add_Amount, med_order.special FROM `medicineorder` med_order, `medicine` med WHERE med_order.`MedicineID` = med.`MedicineID` AND Transaction_ID = {}".format(id))
