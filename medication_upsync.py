@@ -11,8 +11,8 @@ logging.basicConfig(filename='order.log',
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# order_date = str(datetime.today().strftime('%Y-%m-%d'))
-order_date = "2020-03-19"
+order_date = str(datetime.today().strftime('%Y-%m-%d'))
+#order_date = "2020-03-19"
 
 gql_max_order = gql_max_order_by_date(order_date)
 sql_max_order = sql_max_order_by_date(order_date)
