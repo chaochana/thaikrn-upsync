@@ -3,13 +3,16 @@ import logging
 from module.connectivity import *
 from datetime import datetime
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='order.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 # order_date = str(datetime.today().strftime('%Y-%m-%d'))
-order_date = "2020-03-05"
+order_date = "2020-03-19"
 
 gql_max_order = gql_max_order_by_date(order_date)
 sql_max_order = sql_max_order_by_date(order_date)

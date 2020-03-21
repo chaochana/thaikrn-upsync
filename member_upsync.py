@@ -4,7 +4,10 @@ import logging
 from module.connectivity import *
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='member.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 config = configparser.ConfigParser()
 config.read('config.ini')
