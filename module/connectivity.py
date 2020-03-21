@@ -3,6 +3,7 @@ import requests
 import logging
 import json
 import configparser
+from retry_requests import retry
 
 
 config = configparser.ConfigParser()
@@ -28,7 +29,8 @@ def gql(query, variables):
     secret = config['GraphQL']['secret']
     headers = {'Content-Type': 'application/json', 'x-hasura-admin-secret': '%s' % secret}
 
-    r = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
+    my_session = retry(retries=10)
+    r = my_session.post(url, json={'query': query, 'variables': variables}, headers=headers)
 
     if r.status_code == 200:
         r_json = json.loads(r.text)
@@ -77,7 +79,8 @@ def gql_insert_member(variables):
 
 def gql_insert_medication(variables):
     insert_query = """
-        mutation insert_medication(
+        mutation insert_order(
+          $transaction_id: bigint,
           $member_id: bigint,
           $order: json,
           $order_date: date,
@@ -85,8 +88,9 @@ def gql_insert_medication(variables):
           $session: String,
           $type: String
             ) {
-          insert_medication(
+          insert_order(
             objects: {
+              id: $transaction_id,
               member_id: $member_id, 
               order: $order, 
               order_date: $order_date, 
@@ -142,8 +146,44 @@ def sql_max_member():
     return int(response[0][0])
 
 
-def sql_medication_by_date(date):
-    return sql("SELECT Transaction_ID, MemberID, Queue, Queue_Session, Transaction_Type FROM `medicinetransaction` WHERE DATE_IDX = '{}'".format(date.replace('-', '')))
+def gql_max_order_by_date(date):
+    max_order_query = """
+      query MaxOrderQuery (
+                $date: date
+              ) {
+        order_aggregate(where: {order_date: {_eq: $date}}) {
+          aggregate {
+            max {
+              id
+            }
+          }
+        }
+      }
+    """
+
+    variables = { "date": date }
+
+    response = gql(max_order_query, variables)
+
+    r_json = json.loads(response)
+
+    if ( r_json['data']['order_aggregate']['aggregate']['max']['id'] != None ):
+      return int(r_json['data']['order_aggregate']['aggregate']['max']['id'])
+    else:
+      return 0
+
+
+def sql_max_order_by_date(date):
+    query = "SELECT MAX(Transaction_ID) FROM `medicinetransaction` WHERE DATE_IDX = '{}'".format(date.replace('-', ''))
+
+    response = sql(query)
+
+    return int(response[0][0])
+
+
+def sql_medication_by_date(date, local_max_order):
+    logging.info('{} {}'.format(date, local_max_order))
+    return sql("SELECT Transaction_ID, MemberID, Queue, Queue_Session, Transaction_Type FROM `medicinetransaction` WHERE DATE_IDX = '{}' AND Transaction_ID > {} ORDER BY Transaction_ID".format(date.replace('-', ''), local_max_order))
 
 
 def get_sql_medication_detail_by_id(id):
